@@ -142,7 +142,7 @@ def preprocess():
     '''
 def second(SkyCounter, UbuntuCounter, SweetCounter):
     paths=['font_recognition_train_set\images\Skylark','font_recognition_train_set\images\\Ubuntu','font_recognition_train_set\images\Sweet']#delete when moved up
-    folderNames=['SkyCounter','UbuntuCounter','SweetCounter']
+    folderNames=['SkyLark','UbuntuMono','SweetPuppy']
     splitRatio=0.8
 
     plt.figure()
@@ -180,8 +180,20 @@ def second(SkyCounter, UbuntuCounter, SweetCounter):
     skyFiles=skyFiles[0:minPictures:]
     ubuntuFiles=ubuntuFiles[0:minPictures:]
     sweetFiles=sweetFiles[0:minPictures:]
-    print(len(ubuntuFiles),len(skyFiles),len(sweetFiles)) #sanity check to see we got only the min amout of pictures per label
-
+    #print(len(ubuntuFiles),len(skyFiles),len(sweetFiles)) #sanity check to see we got only the min amout of pictures per label
+    train_num=int(np.floor(minPictures*splitRatio))
+    valid_num=int(np.floor(minPictures*(1-splitRatio)))
+    #print(train_num,valid_num) #1544 385
+    i=0
+    for i in range (minPictures):
+        if i< train_num:
+            os.rename(os.path.join(paths[0],skyFiles[i]),f'training_data\SkyLark\\{skyFiles[i]}')
+            os.rename(os.path.join(paths[1],ubuntuFiles[i]),f'training_data\\UbuntuMono\\{ubuntuFiles[i]}')
+            os.rename(os.path.join(paths[2],sweetFiles[i]),f'training_data\SweetPuppy\\{sweetFiles[i]}')
+        else:
+            os.rename(os.path.join(paths[0], skyFiles[i]), f'validation_data\SkyLark\\{skyFiles[i]}')
+            os.rename(os.path.join(paths[1], ubuntuFiles[i]), f'validation_data\\UbuntuMono\\{ubuntuFiles[i]}')
+            os.rename(os.path.join(paths[2], sweetFiles[i]), f'validation_data\SweetPuppy\\{sweetFiles[i]}')
 
 
 def print_hi(name):
@@ -191,7 +203,7 @@ def print_hi(name):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    #SkyCounter, UbuntuCounter, SweetCounter=preprocess()
+    SkyCounter, UbuntuCounter, SweetCounter=preprocess()
     SkyCounter, UbuntuCounter, SweetCounter=1930,2974,7334
     second(SkyCounter, UbuntuCounter, SweetCounter)
     print_hi('PyCharm')

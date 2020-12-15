@@ -205,8 +205,8 @@ def train_model():
         label_mode="categorical",
         class_names=None,
         color_mode="grayscale",
-        batch_size=16,
-        image_size=(256, 256),
+        batch_size=32,
+        image_size=(128, 128),
         shuffle=True,
         seed=1,
         validation_split=None,
@@ -220,8 +220,8 @@ def train_model():
         label_mode="categorical",
         class_names=None,
         color_mode="grayscale",
-        batch_size=16,
-        image_size=(256, 256),
+        batch_size=32,
+        image_size=(128, 128),
         shuffle=True,
         seed=1,
         validation_split=None,
@@ -248,8 +248,8 @@ def train_model():
     data_augmentation = tf.keras.models.Sequential(
         [
             tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal",
-                                                                  input_shape=(256,
-                                                                               256,
+                                                                  input_shape=(128,
+                                                                               128,
                                                                                1)),
             tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
             tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
@@ -260,7 +260,7 @@ def train_model():
     model = tf.keras.models.Sequential([
         # This is the first convolution
         data_augmentation,
-        tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(256, 256, 1)),
+        tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(128, 128, 1)),
         tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
@@ -331,7 +331,7 @@ def load_model(bestModelPath):
 def predict_one_image(path):
     image = path
     img = tf.keras.preprocessing.image.load_img(
-        image, target_size=(256, 256), color_mode='grayscale')
+        image, target_size=(128, 128), color_mode='grayscale')
 
     plt.imshow(img)
     plt.show()
@@ -361,7 +361,7 @@ def predict_9_random_picture_from_each_class():
         for i in range(0, 9):
             plt.subplot(331 + i)
             img = tf.keras.preprocessing.image.load_img(
-                pics[random.randint(0, 385)], target_size=(256, 256), color_mode='grayscale')
+                pics[random.randint(0, 385)], target_size=(128, 128), color_mode='grayscale')
             img_array = tf.keras.preprocessing.image.img_to_array(img)
             img_array = tf.expand_dims(img_array, 0)
             pred = best_model.predict_classes(img_array)
@@ -377,9 +377,8 @@ if __name__ == '__main__':
     #SkyCounter, UbuntuCounter, SweetCounter=preprocess()
     #SkyCounter, UbuntuCounter, SweetCounter=1930,2974,7334
     #second(SkyCounter, UbuntuCounter, SweetCounter)
-    train_model()
-    #bestModelPath = 'CNN90.7val.hdf5'
-    bestModelPath = 'CNNbest.hdf5'
+    #train_model()
+    bestModelPath = 'CNN90.7val.hdf5'
     best_model=load_model(bestModelPath)
     predict_9_random_picture_from_each_class()
 

@@ -386,7 +386,7 @@ def test_predict(best_model):
     word_pred=[]
 
 
-    for im_name in im_names[:5]:
+    for im_name in im_names:
         #im_name=im_names[17]
         img=db['data'][im_name][:]
         charBB = db['data'][im_name].attrs['charBB']
@@ -448,7 +448,7 @@ def test_predict(best_model):
     df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy','Ubuntu Mono'],
                          ["Skylark", 'Sweet Puppy','Ubuntu Mono'])
 
-    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16})
+    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16},fmt='g')
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.suptitle('Per Char')
@@ -459,7 +459,7 @@ def test_predict(best_model):
     df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'],
                          ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'])
 
-    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16})
+    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16},fmt='g')
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.suptitle('Per Word')

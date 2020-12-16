@@ -1,6 +1,5 @@
 # set the matplotlib backend so figures can be saved in the background
 # import the necessary packages
-
 import seaborn as sns
 from sklearn.preprocessing import LabelBinarizer
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -9,11 +8,10 @@ from tensorflow.keras.datasets import fashion_mnist
 from tensorflow.keras.models import load_model
 import tensorflow.keras.backend as K
 import numpy as np
+import argparse
 import cv2
 import sys
 import os
-from sklearn.metrics import confusion_matrix
-
 import h5py
 import cv2 as cv
 import numpy as np
@@ -265,8 +263,8 @@ def train_model():
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dropout(0.25),
-        tf.keras.layers.Dense(256, activation='relu'),
         tf.keras.layers.Dense(512, activation='relu'),
+        tf.keras.layers.Dense(1024, activation='relu'),
         tf.keras.layers.Dense(3, activation='softmax')
     ])
 
@@ -289,7 +287,6 @@ def train_model():
     # callbacks=myCallback()
     history = model.fit(train_ds, batch_size=32, epochs=epochs,
                         validation_data=val_ds, callbacks=callbacks_list)
-
 
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
@@ -329,13 +326,13 @@ def predict_one_image(path):
     img_array = tf.keras.preprocessing.image.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)  # Create a batc
     pred = best_model.predict_classes(img_array)
-    class_names = ["Skylark", 'Sweet Puppy','Ubuntu Mono']
+    class_names = ["Skylark", 'Ubuntu Mono', 'Sweet Puppy']
 
     print(f'the predicted label is: {class_names[int(pred)]}')
     print(f' the model is sure about it in :{best_model.predict(img_array)[0][pred]}')
 
 def predict_9_random_picture_from_each_class():
-    class_names = ["Skylark", 'Sweet Puppy','Ubuntu Mono']
+    class_names = ["Skylark", 'Ubuntu Mono', 'Sweet Puppy']
 
     paths = []
     paths.append('validation_data/SkyLark')
@@ -361,120 +358,14 @@ def predict_9_random_picture_from_each_class():
             plt.imshow(img, cmap='gray')
         plt.show()
 
-
-def test_predict(best_model):
-    if not os.path.isdir('test_data'):
-        os.mkdir('test_data')
-        print("created a new directory test_data, please put the file 'SynthTextTest.h5' there.")
-    if not os.listdir('test_data'):
-        print('the folder is empty ,please fill it according to the manual, breaking now')
-        return 'error'
-
-    best_model=best_model
-    file_name = 'test_data/SynthTextTest.h5'
-    db = h5py.File(file_name, 'r')
-    im_names = list(db['data'].keys())
-    plt.figure()
-    class_names = ["Skylark", 'Sweet Puppy','Ubuntu Mono']
-    wrongCounterWords=0
-    rightCounterWords=0
-    rightCounterChars=0
-    wrongCounterChars=0
-    char_actual=[]
-    word_actual=[]
-    char_pred=[]
-    word_pred=[]
-
-
-    for im_name in im_names[:5]:
-        #im_name=im_names[17]
-        img=db['data'][im_name][:]
-        charBB = db['data'][im_name].attrs['charBB']
-        txt = db['data'][im_name].attrs['txt']
-        font = db['data'][im_name].attrs['font']
-        #print(img)
-        #print(im_name)
-        #print(font)
-        #print(f'the text : {txt}')
-        #print(txt[0],len(txt[0])) #txt[0] is the first word with only the real word leng (not including the ' and b )
-        i = 0
-        for words in txt: # taking every word in the txt and parsing chars
-            pics=[] #pictures of the char from the word
-            for char in words:  # going through all the pictures
-
-                pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
-                pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
-                M = cv2.getPerspectiveTransform(pts1, pts2)
-                dst = cv.warpPerspective(img, M, (400, 400))  # cropping out a 400,400 pic of the char
-                dst=cv.cvtColor(dst,cv.COLOR_BGR2GRAY)
-                dst=cv.resize(dst,(128,128))
-                pics.append(dst)
-                #plt.imshow(dst,cmap='gray')  # showing the croped pic
-                #plt.show()
-                #print(char)
-                i += 1
-            #print(len(pics))
-            fontProb=[0,0,0] #Skylark", 'Sweet Puppy','Ubuntu Mono
-            for j in range(len(pics)):
-                img_array = tf.keras.preprocessing.image.img_to_array(pics[j])
-                img_array = tf.expand_dims(img_array, 0)
-                predLabel = np.argmax(best_model.predict(img_array), axis=-1)
-                fontProb+=best_model.predict(img_array)[0] #each char cast a vote
-                #print(fontProb)
-
-                #print(f'the predicted label is: {class_names[int(predLabel)]} the model is sure about it in :{best_model.predict(img_array)[0][predLabel]} ')
-            #print(fontProb)
-            predictedFont=class_names[np.argmax(fontProb)] # declaring the winner of the elecetions!
-            #print(f' the predicted font for the word {words} is {predictedFont} and the real label is {font[i-1]}')
-            if predictedFont[-1] == chr(font[i-1][-1]):
-                rightCounterWords+=1 #words
-                rightCounterChars+=len(pics) #chars
-
-            else:
-                wrongCounterWords+=1
-                wrongCounterChars+=len(pics)
-
-            fontName=str(font[i-1])
-            for _ in range (len(pics)): # looping and inserting every char of the word
-                char_actual.append(fontName[2:-1])
-                char_pred.append(predictedFont)
-            word_actual.append(fontName[2:-1]) #appending only full words
-            word_pred.append(predictedFont)
-
-    print(f'the model predicted {rightCounterWords} words correctly and {wrongCounterWords} wrong that {(rightCounterWords/(rightCounterWords+wrongCounterWords))*100}% accuracy!')
-    print(f'the model predicted {rightCounterChars} words correctly and {wrongCounterChars} wrong that {(rightCounterChars/(rightCounterChars+wrongCounterChars))*100}% accuracy!')
-
-    cf=confusion_matrix(char_actual, char_pred)
-    df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy','Ubuntu Mono'],
-                         ["Skylark", 'Sweet Puppy','Ubuntu Mono'])
-
-    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16})
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.suptitle('Per Char')
-    plt.show()
-    print(f" Class report for classifier per char \n{metrics.classification_report(char_actual, char_pred)}")
-
-    cf = confusion_matrix(word_actual, word_pred)
-    df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'],
-                         ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'])
-
-    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16})
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.suptitle('Per Word')
-    plt.show()
-    print(f" Class report for classifier per word \n{metrics.classification_report(char_actual, char_pred)}")
-
-
+# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
     #preprocess()
-    #train_model()
-    bestModelPath = 'CNN91.4val128.hdf5'
+    train_model()
+    bestModelPath = 'CNNbest.hdf5'
     best_model=load_model(bestModelPath)
     #predict_9_random_picture_from_each_class()
-    test_predict(best_model)
 
 
     ###########################

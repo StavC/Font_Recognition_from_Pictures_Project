@@ -1,4 +1,3 @@
-# set the matplotlib backend so figures can be saved in the background
 # import the necessary packages
 
 import seaborn as sns
@@ -286,7 +285,6 @@ def train_model():
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True,
                                                     mode='max')
     callbacks_list = [checkpoint]
-    # callbacks=myCallback()
     history = model.fit(train_ds, batch_size=32, epochs=epochs,
                         validation_data=val_ds, callbacks=callbacks_list)
 
@@ -384,10 +382,12 @@ def test_predict(best_model):
     word_actual=[]
     char_pred=[]
     word_pred=[]
+    wrongChars=[]
+    wrongWords=[]
+    rightWords=[]
 
 
-    for im_name in im_names:
-        #im_name=im_names[17]
+    for im_name in im_names[:5]:
         img=db['data'][im_name][:]
         charBB = db['data'][im_name].attrs['charBB']
         txt = db['data'][im_name].attrs['txt']
@@ -420,19 +420,22 @@ def test_predict(best_model):
                 img_array = tf.expand_dims(img_array, 0)
                 predLabel = np.argmax(best_model.predict(img_array), axis=-1)
                 fontProb+=best_model.predict(img_array)[0] #each char cast a vote
-                #print(fontProb)
 
                 #print(f'the predicted label is: {class_names[int(predLabel)]} the model is sure about it in :{best_model.predict(img_array)[0][predLabel]} ')
             #print(fontProb)
             predictedFont=class_names[np.argmax(fontProb)] # declaring the winner of the elecetions!
             #print(f' the predicted font for the word {words} is {predictedFont} and the real label is {font[i-1]}')
-            if predictedFont[-1] == chr(font[i-1][-1]):
+            fontName=str(font[i-1])
+            if predictedFont[-1] == chr(font[i-1][-1]): #an easy quick check by only using one char
                 rightCounterWords+=1 #words
                 rightCounterChars+=len(pics) #chars
-
+                rightWords.append(words)
             else:
                 wrongCounterWords+=1
                 wrongCounterChars+=len(pics)
+                wrongWords.append(words)
+                for pic in pics: #gathering all the wrong prediction of chars so we can take a look at them later
+                    wrongChars.append([pic,fontName[2:-1],predictedFont])
 
             fontName=str(font[i-1])
             for _ in range (len(pics)): # looping and inserting every char of the word
@@ -440,6 +443,8 @@ def test_predict(best_model):
                 char_pred.append(predictedFont)
             word_actual.append(fontName[2:-1]) #appending only full words
             word_pred.append(predictedFont)
+
+    ########## End of Model #############
 
     print(f'the model predicted {rightCounterWords} words correctly and {wrongCounterWords} wrong that {(rightCounterWords/(rightCounterWords+wrongCounterWords))*100}% accuracy!')
     print(f'the model predicted {rightCounterChars} words correctly and {wrongCounterChars} wrong that {(rightCounterChars/(rightCounterChars+wrongCounterChars))*100}% accuracy!')
@@ -465,6 +470,50 @@ def test_predict(best_model):
     plt.suptitle('Per Word')
     plt.show()
     print(f" Class report for classifier per word \n{metrics.classification_report(char_actual, char_pred)}")
+
+    print(f' the words that the model predicted wrong are : {wrongWords}')
+    print(f' the words that the model predicted right are : {rightWords}')
+
+    wrongOccurrence = dict()
+    for word in wrongWords:
+        try:
+            wrongOccurrence[len(word)] = wrongOccurrence[len(word)] + 1
+        except KeyError:
+            wrongOccurrence[len(word)] = 1
+
+    #print(occurrence.items())
+    df = pd.DataFrame([(i, wrongOccurrence[i]) for i in wrongOccurrence.keys()],
+                      columns=["length", "count"])
+    fig = plt.figure(figsize=(15, 5))
+    ax = sns.barplot(x="length", y="count", data=df)
+    plt.suptitle('wrong predicted wrongs length')
+
+    plt.show()
+
+    rightOccurrence = dict()
+    for word in rightWords:
+        try:
+            rightOccurrence[len(word)] = rightOccurrence[len(word)] + 1
+        except KeyError:
+            rightOccurrence[len(word)] = 1
+
+    # print(occurrence.items())
+    df = pd.DataFrame([(i, rightOccurrence[i]) for i in rightOccurrence.keys()],
+                      columns=["length", "count"])
+    fig = plt.figure(figsize=(15, 5))
+    ax = sns.barplot(x="length", y="count", data=df)
+    plt.suptitle('right predicted wrongs length')
+    plt.show()
+
+    plt.figure(figsize=(25, 10))
+    plt.suptitle(f'Wrongly predicted labels')
+    for i in range(0, 9):
+        plt.subplot(331 + i)
+        randomInt=random.randint(0, wrongCounterChars-1) #getting a random picture of a char from the wrong ones
+        plt.title(
+            f'the predicted label is: {wrongChars[randomInt][2]} , while the real label is {wrongChars[randomInt][1]} ')
+        plt.imshow(wrongChars[randomInt][0], cmap='gray')
+    plt.show()
 
 
 if __name__ == '__main__':

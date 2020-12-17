@@ -359,6 +359,54 @@ def predict_9_random_picture_from_each_class():
             plt.imshow(img, cmap='gray')
         plt.show()
 
+def outputCF(actual,pred,wordOrChar):
+    cf = confusion_matrix(actual, pred)
+    df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'],
+                         ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'])
+
+    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16}, fmt='g')
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.suptitle(f' Per {wordOrChar} ')
+    plt.show()
+def outputOccurrencePlot(wrongWords,rightWords):
+    wrongOccurrence = dict()
+    for word in wrongWords:
+        try:
+            wrongOccurrence[len(word)] = wrongOccurrence[len(word)] + 1
+        except KeyError:
+            wrongOccurrence[len(word)] = 1
+
+    df = pd.DataFrame([(i, wrongOccurrence[i]) for i in wrongOccurrence.keys()],
+                      columns=["length", "count"])
+    fig = plt.figure(figsize=(15, 5))
+    ax = sns.barplot(x="length", y="count", data=df)
+    plt.suptitle('wrong predicted wrongs length')
+    plt.show()
+
+    rightOccurrence = dict()
+    for word in rightWords:
+        try:
+            rightOccurrence[len(word)] = rightOccurrence[len(word)] + 1
+        except KeyError:
+            rightOccurrence[len(word)] = 1
+
+    df = pd.DataFrame([(i, rightOccurrence[i]) for i in rightOccurrence.keys()],
+                      columns=["length", "count"])
+    fig = plt.figure(figsize=(15, 5))
+    ax = sns.barplot(x="length", y="count", data=df)
+    plt.suptitle('right predicted wrongs length')
+    plt.show()
+def outputWronglyPredictedLabels(wrongCounterChars,wrongChars):
+    plt.figure(figsize=(25, 10))
+    plt.suptitle(f'Wrongly predicted labels')
+    for i in range(0, 9):
+        plt.subplot(331 + i)
+        randomInt = random.randint(0, wrongCounterChars - 1)  # getting a random picture of a char from the wrong ones
+        plt.title(
+            f'the predicted label is: {wrongChars[randomInt][2]} , while the real label is {wrongChars[randomInt][1]} ')
+        plt.imshow(wrongChars[randomInt][0], cmap='gray')
+    plt.show()
 
 def test_predict(best_model):
     if not os.path.isdir('test_data'):
@@ -387,7 +435,7 @@ def test_predict(best_model):
     rightWords=[]
 
 
-    for im_name in im_names[:5]:
+    for im_name in im_names:
         img=db['data'][im_name][:]
         charBB = db['data'][im_name].attrs['charBB']
         txt = db['data'][im_name].attrs['txt']
@@ -411,9 +459,7 @@ def test_predict(best_model):
                 pics.append(dst)
                 #plt.imshow(dst,cmap='gray')  # showing the croped pic
                 #plt.show()
-                #print(char)
                 i += 1
-            #print(len(pics))
             fontProb=[0,0,0] #Skylark", 'Sweet Puppy','Ubuntu Mono
             for j in range(len(pics)):
                 img_array = tf.keras.preprocessing.image.img_to_array(pics[j])
@@ -444,76 +490,21 @@ def test_predict(best_model):
             word_actual.append(fontName[2:-1]) #appending only full words
             word_pred.append(predictedFont)
 
-    ########## End of Model #############
-
+    ########## End of Model ##########
+    ########## Visualization ##########
     print(f'the model predicted {rightCounterWords} words correctly and {wrongCounterWords} wrong that {(rightCounterWords/(rightCounterWords+wrongCounterWords))*100}% accuracy!')
-    print(f'the model predicted {rightCounterChars} words correctly and {wrongCounterChars} wrong that {(rightCounterChars/(rightCounterChars+wrongCounterChars))*100}% accuracy!')
-
-    cf=confusion_matrix(char_actual, char_pred)
-    df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy','Ubuntu Mono'],
-                         ["Skylark", 'Sweet Puppy','Ubuntu Mono'])
-
-    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16},fmt='g')
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.suptitle('Per Char')
-    plt.show()
-    print(f" Class report for classifier per char \n{metrics.classification_report(char_actual, char_pred)}")
-
-    cf = confusion_matrix(word_actual, word_pred)
-    df_cm = pd.DataFrame(cf, ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'],
-                         ["Skylark", 'Sweet Puppy', 'Ubuntu Mono'])
-
-    sns.heatmap(df_cm, annot=True, annot_kws={"size": 16},fmt='g')
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.suptitle('Per Word')
-    plt.show()
-    print(f" Class report for classifier per word \n{metrics.classification_report(char_actual, char_pred)}")
-
+    print(f'the model predicted {rightCounterChars} Chars correctly and {wrongCounterChars} wrong that {(rightCounterChars/(rightCounterChars+wrongCounterChars))*100}% accuracy!')
+    print(f" Class report for classifier per Words \n{metrics.classification_report(word_actual, word_pred)}")
+    print(f" Class report for classifier per Chars \n{metrics.classification_report(char_actual, char_pred)}")
     print(f' the words that the model predicted wrong are : {wrongWords}')
     print(f' the words that the model predicted right are : {rightWords}')
 
-    wrongOccurrence = dict()
-    for word in wrongWords:
-        try:
-            wrongOccurrence[len(word)] = wrongOccurrence[len(word)] + 1
-        except KeyError:
-            wrongOccurrence[len(word)] = 1
+    outputCF(char_actual,char_pred,'Char') #plotting out a nice looking confu matrix
+    outputCF(word_actual,word_pred,'Word')
+    outputOccurrencePlot(wrongWords,rightWords) #potting out barplot of Occurrence of right predicted words and wrong predicted words sorted by word length for additonal insights
+    outputWronglyPredictedLabels(wrongCounterChars,wrongChars) # plotting out 9 pictures of wrongly predicted words
 
-    #print(occurrence.items())
-    df = pd.DataFrame([(i, wrongOccurrence[i]) for i in wrongOccurrence.keys()],
-                      columns=["length", "count"])
-    fig = plt.figure(figsize=(15, 5))
-    ax = sns.barplot(x="length", y="count", data=df)
-    plt.suptitle('wrong predicted wrongs length')
 
-    plt.show()
-
-    rightOccurrence = dict()
-    for word in rightWords:
-        try:
-            rightOccurrence[len(word)] = rightOccurrence[len(word)] + 1
-        except KeyError:
-            rightOccurrence[len(word)] = 1
-
-    # print(occurrence.items())
-    df = pd.DataFrame([(i, rightOccurrence[i]) for i in rightOccurrence.keys()],
-                      columns=["length", "count"])
-    fig = plt.figure(figsize=(15, 5))
-    ax = sns.barplot(x="length", y="count", data=df)
-    plt.suptitle('right predicted wrongs length')
-    plt.show()
-
-    plt.figure(figsize=(25, 10))
-    plt.suptitle(f'Wrongly predicted labels')
-    for i in range(0, 9):
-        plt.subplot(331 + i)
-        randomInt=random.randint(0, wrongCounterChars-1) #getting a random picture of a char from the wrong ones
-        plt.title(
-            f'the predicted label is: {wrongChars[randomInt][2]} , while the real label is {wrongChars[randomInt][1]} ')
-        plt.imshow(wrongChars[randomInt][0], cmap='gray')
-    plt.show()
 
 
 if __name__ == '__main__':

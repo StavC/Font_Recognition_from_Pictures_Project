@@ -198,7 +198,7 @@ def train_model():
         class_names=None,
         color_mode="grayscale",
         batch_size=32,
-        image_size=(128, 128),
+        image_size=(256, 256),
         shuffle=True,
         seed=1,
         validation_split=None,
@@ -213,7 +213,7 @@ def train_model():
         class_names=None,
         color_mode="grayscale",
         batch_size=32,
-        image_size=(128, 128),
+        image_size=(256, 256),
         shuffle=True,
         seed=1,
         validation_split=None,
@@ -240,8 +240,8 @@ def train_model():
     data_augmentation = tf.keras.models.Sequential(
         [
             tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal",
-                                                                  input_shape=(128,
-                                                                               128,
+                                                                  input_shape=(256,
+                                                                               256,
                                                                                1)),
             tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
             tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
@@ -251,7 +251,7 @@ def train_model():
 
     model = tf.keras.models.Sequential([
         data_augmentation,
-        tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(128, 128, 1)),
+        tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(256, 256, 1)),
         tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
@@ -261,6 +261,12 @@ def train_model():
         tf.keras.layers.Dropout(0.25),
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Conv2D(256, (3, 3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        tf.keras.layers.Conv2D(512, (3, 3), activation='relu'),
+        tf.keras.layers.Dropout(0.25),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        tf.keras.layers.Conv2D(1024, (3, 3), activation='relu'),
+        tf.keras.layers.Dropout(0.25),
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dropout(0.25),
@@ -280,11 +286,12 @@ def train_model():
         metrics=['accuracy']
     )
 
-    epochs = 100
-    filepath = "CNNbest.hdf5"
+    epochs = 120
+    filepath = "256ModelV2.hdf5"
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True,
                                                     mode='max')
     callbacks_list = [checkpoint]
+    print(model.summary())
     history = model.fit(train_ds, batch_size=32, epochs=epochs,
                         validation_data=val_ds, callbacks=callbacks_list)
 
@@ -319,7 +326,7 @@ def load_model(bestModelPath):
 def predict_one_image(path):
     image = path
     img = tf.keras.preprocessing.image.load_img(
-        image, target_size=(128, 128), color_mode='grayscale')
+        image, target_size=(256, 256), color_mode='grayscale')
 
     plt.imshow(img)
     plt.show()
@@ -349,7 +356,7 @@ def predict_9_random_picture_from_each_class():
         for i in range(0, 9):
             plt.subplot(331 + i)
             img = tf.keras.preprocessing.image.load_img(
-                pics[random.randint(0, 385)], target_size=(128, 128), color_mode='grayscale')
+                pics[random.randint(0, 385)], target_size=(256, 256), color_mode='grayscale')
             img_array = tf.keras.preprocessing.image.img_to_array(img)
             img_array = tf.expand_dims(img_array, 0)
             pred = best_model.predict_classes(img_array)
@@ -379,8 +386,6 @@ def outputOccurrencePlot(wrongWords,rightWords):
 
     df = pd.DataFrame([(i, wrongOccurrence[i]) for i in wrongOccurrence.keys()],
                       columns=["length", "count"])
-    print(df.describe())
-    print(df.head())
     fig = plt.figure(figsize=(15, 5))
     ax = sns.barplot(x="length", y="count", data=df)
     plt.suptitle('wrong predicted wrongs length')
@@ -395,6 +400,8 @@ def outputOccurrencePlot(wrongWords,rightWords):
 
     df = pd.DataFrame([(i, rightOccurrence[i]) for i in rightOccurrence.keys()],
                       columns=["length", "count"])
+    print(df.describe())
+    print(df.head())
     fig = plt.figure(figsize=(15, 5))
     ax = sns.barplot(x="length", y="count", data=df)
     plt.suptitle('right predicted wrongs length')
@@ -457,7 +464,7 @@ def test_predict(best_model):
                 M = cv2.getPerspectiveTransform(pts1, pts2)
                 dst = cv.warpPerspective(img, M, (400, 400))  # cropping out a 400,400 pic of the char
                 dst=cv.cvtColor(dst,cv.COLOR_BGR2GRAY)
-                dst=cv.resize(dst,(128,128))
+                dst=cv.resize(dst,(256,256))
                 pics.append(dst)
                 #plt.imshow(dst,cmap='gray')  # showing the croped pic
                 #plt.show()
@@ -513,7 +520,7 @@ if __name__ == '__main__':
 
     #preprocess()
     #train_model()
-    bestModelPath = 'CNN91.4val128.hdf5'
+    bestModelPath = '256ModelV2.hdf5'
     best_model=load_model(bestModelPath)
     #predict_9_random_picture_from_each_class()
     test_predict(best_model)

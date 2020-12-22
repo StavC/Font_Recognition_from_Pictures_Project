@@ -377,12 +377,12 @@ def outputOccurrencePlot(wrongWords,rightWords):
         except KeyError:
             wrongOccurrence[len(word)] = 1
 
-    df = pd.DataFrame([(i, wrongOccurrence[i]) for i in wrongOccurrence.keys()],
+    dfWrong = pd.DataFrame([(i, wrongOccurrence[i]) for i in wrongOccurrence.keys()],
                       columns=["length", "count"])
-    print(df.describe())
-    print(df.head())
+    print('wrong dataframe')
+    print(dfWrong.head())
     fig = plt.figure(figsize=(15, 5))
-    ax = sns.barplot(x="length", y="count", data=df)
+    ax = sns.barplot(x="length", y="count", data=dfWrong)
     plt.suptitle('wrong predicted wrongs length')
     plt.show()
 
@@ -393,10 +393,14 @@ def outputOccurrencePlot(wrongWords,rightWords):
         except KeyError:
             rightOccurrence[len(word)] = 1
 
-    df = pd.DataFrame([(i, rightOccurrence[i]) for i in rightOccurrence.keys()],
+    dfRight = pd.DataFrame([(i, rightOccurrence[i]) for i in rightOccurrence.keys()],
                       columns=["length", "count"])
+    print('right dataframe ')
+    print(dfRight.head())
+
+
     fig = plt.figure(figsize=(15, 5))
-    ax = sns.barplot(x="length", y="count", data=df)
+    ax = sns.barplot(x="length", y="count", data=dfRight)
     plt.suptitle('right predicted wrongs length')
     plt.show()
 def outputWronglyPredictedLabels(wrongCounterChars,wrongChars):
@@ -409,6 +413,7 @@ def outputWronglyPredictedLabels(wrongCounterChars,wrongChars):
             f'the predicted label is: {wrongChars[randomInt][2]} , while the real label is {wrongChars[randomInt][1]} ')
         plt.imshow(wrongChars[randomInt][0], cmap='gray')
     plt.show()
+
 
 def test_predict(best_model):
     if not os.path.isdir('test_data'):
@@ -437,7 +442,7 @@ def test_predict(best_model):
     rightWords=[]
 
 
-    for im_name in im_names:
+    for im_name in im_names[:100]:
         img=db['data'][im_name][:]
         charBB = db['data'][im_name].attrs['charBB']
         txt = db['data'][im_name].attrs['txt']
@@ -505,6 +510,9 @@ def test_predict(best_model):
     outputCF(word_actual,word_pred,'Word')
     outputOccurrencePlot(wrongWords,rightWords) #potting out barplot of Occurrence of right predicted words and wrong predicted words sorted by word length for additonal insights
     outputWronglyPredictedLabels(wrongCounterChars,wrongChars) # plotting out 9 pictures of wrongly predicted words
+    for i,_ in  enumerate(wrongChars):
+        plt.imshow(wrongChars[i][0], cmap='gray')
+        plt.show()
 
 
 

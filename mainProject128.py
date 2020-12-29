@@ -424,7 +424,7 @@ def test_predict(best_model):
         return 'error'
 
     best_model=best_model
-    file_name = 'test_data/SynthTextTest.h5'
+    file_name = 'test_data/SynthText_val.h5'
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
     plt.figure()
@@ -441,8 +441,8 @@ def test_predict(best_model):
     wrongWords=[]
     rightWords=[]
 
-
-    for im_name in im_names[:100]:
+    print(len(im_names))
+    for im_name in im_names:
         img=db['data'][im_name][:]
         charBB = db['data'][im_name].attrs['charBB']
         txt = db['data'][im_name].attrs['txt']
@@ -510,9 +510,11 @@ def test_predict(best_model):
     outputCF(word_actual,word_pred,'Word')
     outputOccurrencePlot(wrongWords,rightWords) #potting out barplot of Occurrence of right predicted words and wrong predicted words sorted by word length for additonal insights
     outputWronglyPredictedLabels(wrongCounterChars,wrongChars) # plotting out 9 pictures of wrongly predicted words
+    if not os.path.isdir('WrongPredictedLetters'):
+        os.mkdir("WrongPredictedLetters")
     for i,_ in  enumerate(wrongChars):
-        plt.imshow(wrongChars[i][0], cmap='gray')
-        plt.show()
+        cv2.imwrite(os.path.join('WrongPredictedLetters', f'{i}.jpg'), wrongChars[i][0])
+
 
 
 

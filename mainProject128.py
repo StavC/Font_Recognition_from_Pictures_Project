@@ -12,7 +12,7 @@ import cv2
 import sys
 import os
 from sklearn.metrics import confusion_matrix
-
+import csv
 import h5py
 import cv2 as cv
 import numpy as np
@@ -243,9 +243,9 @@ def train_model():
                                                                   input_shape=(128,
                                                                                128,
                                                                                1)),
-            tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
+            #tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
             tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
-            tf.keras.layers.experimental.preprocessing.RandomZoom(0.1),
+            tf.keras.layers.experimental.preprocessing.RandomZoom(0.2),
         ]
     )
 
@@ -268,7 +268,7 @@ def train_model():
         tf.keras.layers.Dense(512, activation='relu'),
         tf.keras.layers.Dense(3, activation='softmax')
     ])
-
+    print(model.summary())
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=1e-2,
         decay_steps=10000,
@@ -442,60 +442,79 @@ def test_predict(best_model):
     rightWords=[]
 
     print(len(im_names))
-    for im_name in im_names:
-        img=db['data'][im_name][:]
-        charBB = db['data'][im_name].attrs['charBB']
-        txt = db['data'][im_name].attrs['txt']
-        font = db['data'][im_name].attrs['font']
-        #print(img)
-        #print(im_name)
-        #print(font)
-        #print(f'the text : {txt}')
-        #print(txt[0],len(txt[0])) #txt[0] is the first word with only the real word leng (not including the ' and b )
-        i = 0
-        for words in txt: # taking every word in the txt and parsing chars
-            pics=[] #pictures of the char from the word
-            for char in words:  # going through all the pictures
+    with open('char_font_predictions.csv', mode='w',newline='') as predictionCsv:
+        csvWriter = csv.writer(predictionCsv)
+        csvWriter.writerow([' ','image','char',"b'Skylark'","b'Sweet Puppy'","b'Ubuntu Mono'",'Real Font Label from dataBase'])
+        k=0
+        for im_name in im_names:
+            img=db['data'][im_name][:]
+            charBB = db['data'][im_name].attrs['charBB']
+            txt = db['data'][im_name].attrs['txt']
+            font = db['data'][im_name].attrs['font']
+            #print(img)
+            #print(im_name)
+            #print(font)
+            #print(f'the text : {txt}')
+            #print(txt[0],len(txt[0])) #txt[0] is the first word with only the real word leng (not including the ' and b )
+            i = 0
+            for words in txt: # taking every word in the txt and parsing chars
+                pics=[] #pictures of the char from the word
+                for char in words:  # going through all the pictures
 
-                pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
-                pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
-                M = cv2.getPerspectiveTransform(pts1, pts2)
-                dst = cv.warpPerspective(img, M, (400, 400))  # cropping out a 400,400 pic of the char
-                dst=cv.cvtColor(dst,cv.COLOR_BGR2GRAY)
-                dst=cv.resize(dst,(128,128))
-                pics.append(dst)
-                #plt.imshow(dst,cmap='gray')  # showing the croped pic
-                #plt.show()
-                i += 1
-            fontProb=[0,0,0] #Skylark", 'Sweet Puppy','Ubuntu Mono
-            for j in range(len(pics)):
-                img_array = tf.keras.preprocessing.image.img_to_array(pics[j])
-                img_array = tf.expand_dims(img_array, 0)
-                predLabel = np.argmax(best_model.predict(img_array), axis=-1)
-                fontProb+=best_model.predict(img_array)[0] #each char cast a vote
+                    pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
+                    pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
+                    M = cv2.getPerspectiveTransform(pts1, pts2)
+                    dst = cv.warpPerspective(img, M, (400, 400))  # cropping out a 400,400 pic of the char
+                    dst=cv.cvtColor(dst,cv.COLOR_BGR2GRAY)
+                    dst=cv.resize(dst,(128,128))
+                    pics.append(dst)
+                    #plt.imshow(dst,cmap='gray')  # showing the croped pic
+                    #plt.show()
+                    i += 1
+                fontProb=[0,0,0] #Skylark", 'Sweet Puppy','Ubuntu Mono
+                for j in range(len(pics)):
+                    img_array = tf.keras.preprocessing.image.img_to_array(pics[j])
+                    img_array = tf.expand_dims(img_array, 0)
+                    predLabel = np.argmax(best_model.predict(img_array), axis=-1)
+                    fontProb+=best_model.predict(img_array)[0] #each char cast a vote
 
-                #print(f'the predicted label is: {class_names[int(predLabel)]} the model is sure about it in :{best_model.predict(img_array)[0][predLabel]} ')
-            #print(fontProb)
-            predictedFont=class_names[np.argmax(fontProb)] # declaring the winner of the elecetions!
-            #print(f' the predicted font for the word {words} is {predictedFont} and the real label is {font[i-1]}')
-            fontName=str(font[i-1])
-            if predictedFont[-1] == chr(font[i-1][-1]): #an easy quick check by only using one char
-                rightCounterWords+=1 #words
-                rightCounterChars+=len(pics) #chars
-                rightWords.append(words)
-            else:
-                wrongCounterWords+=1
-                wrongCounterChars+=len(pics)
-                wrongWords.append(words)
-                for pic in pics: #gathering all the wrong prediction of chars so we can take a look at them later
-                    wrongChars.append([pic,fontName[2:-1],predictedFont])
+                    #print(f'the predicted label is: {class_names[int(predLabel)]} the model is sure about it in :{best_model.predict(img_array)[0][predLabel]} ')
+                #print(fontProb)
+                predictedFont=class_names[np.argmax(fontProb)] # declaring the winner of the elections!
+                #print(f' the predicted font for the word {words} is {predictedFont} and the real label is {font[i-1]}')
+                fontName=str(font[i-1])
+                if predictedFont[-1] == chr(font[i-1][-1]): #an easy quick check by only using one char
+                    rightCounterWords+=1 #words
+                    rightCounterChars+=len(pics) #chars
+                    rightWords.append(words)
+                else:
+                    wrongCounterWords+=1
+                    wrongCounterChars+=len(pics)
+                    wrongWords.append(words)
+                    for pic in pics: #gathering all the wrong prediction of chars so we can take a look at them later
+                        wrongChars.append([pic,fontName[2:-1],predictedFont])
 
-            fontName=str(font[i-1])
-            for _ in range (len(pics)): # looping and inserting every char of the word
-                char_actual.append(fontName[2:-1])
-                char_pred.append(predictedFont)
-            word_actual.append(fontName[2:-1]) #appending only full words
-            word_pred.append(predictedFont)
+                fontName=str(font[i-1])
+
+                for _ in range (len(pics)): # looping and inserting every char of the word
+
+                    char_actual.append(fontName[2:-1])
+                    char_pred.append(predictedFont)
+                    Skylark=0
+                    Sweet=0
+                    Ubuntu=0
+                    if predictedFont=='Skylark':
+                        Skylark=1
+                    elif predictedFont=='Sweet Puppy':
+                        Sweet=1
+                    else:
+                        Ubuntu=1
+                    csvWriter.writerow([k, im_name, chr(words[_]), Skylark , Sweet, Ubuntu,fontName[2:-1]])
+                    k+=1
+
+                word_actual.append(fontName[2:-1]) #appending only full words
+                word_pred.append(predictedFont)
+
 
     ########## End of Model ##########
     ########## Visualization ##########
@@ -522,8 +541,8 @@ def test_predict(best_model):
 if __name__ == '__main__':
 
     #preprocess()
-    #train_model()
-    bestModelPath = 'CNN91.4val128.hdf5'
+    train_model()
+    bestModelPath = 'CNNBest.hdf5'  #'CNN91.4val128.hdf5'
     best_model=load_model(bestModelPath)
     #predict_9_random_picture_from_each_class()
     test_predict(best_model)

@@ -27,7 +27,7 @@ import random
 def preprocess():
 
 
-    file_name = 'font_recognition_train_set/SynthText.h5'
+    file_name = '../font_recognition_train_set/SynthText.h5'
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
 
@@ -53,9 +53,7 @@ def preprocess():
         if not os.path.isdir(path):
             print(f'created a new directory {path}')
             os.mkdir(path)
-    SkyLarkPics=[]
-    UbuntuMonoPics=[]
-    SweetPuppyPics=[]
+
     plt.figure()
     SkyCounter=0
     UbuntuCounter=0
@@ -103,15 +101,62 @@ def preprocess():
                 #SweetPuppyPics.append(array_img) #was dst
             i += 1
     print('Finished preprocessing the data, there are 3 new folders under images that represent all the chars pics sorted by fonts')
-    return SkyCounter,UbuntuCounter,SweetCounter
 
-    #font = db['data'][im_name].attrs['font']
-        #txt = db['data'][im_name].attrs['txt']
-        #charBB = db['data'][im_name].attrs['charBB']
-        #wordBB = db['data'][im_name].attrs['wordBB']
+   #spliting the char images to train and vald sets according to the split ratio and minimum pics from each category
+    folderNames = ['SkyLark', 'UbuntuMono', 'SweetPuppy']
+    splitRatio = 0.8
 
-        #plt.imshow(img)
-        #plt.show()
+    plt.figure()
+    plt.bar([f'SkyCounter {SkyCounter}', f'UbuntuCounter {UbuntuCounter}', f'SweetCounter {SweetCounter}'],
+            [SkyCounter, UbuntuCounter, SweetCounter], color=['red', 'green', 'blue'])
+    plt.title('Pictures per Label', fontsize=20)
+    plt.xlabel('Labels', fontsize=20)
+    plt.show()
+    minPictures = min(SkyCounter, UbuntuCounter, SweetCounter)
+    print(f'the minimum amount of pics from each category is {minPictures}')
+
+    ### building folders for Training and validation sets
+    path = '../training_data'
+    if not os.path.isdir(path):
+        print(f'created a new directory {path}')
+        os.mkdir(path)
+        for i, _ in enumerate(paths):
+            os.mkdir(os.path.join(path, folderNames[i]))
+
+    path = '../validation_data'
+    if not os.path.isdir(path):
+        print(f'created a new directory {path}')
+        os.mkdir(path)
+        for i, _ in enumerate(paths):
+            os.mkdir(os.path.join(path, folderNames[i]))
+
+    # creating a list of files for each label and shuffling them to reduce correlation between samples
+    skyFiles = os.listdir(paths[0])
+    ubuntuFiles = os.listdir(paths[1])
+    sweetFiles = os.listdir(paths[2])
+    shuffle(skyFiles)
+    shuffle(ubuntuFiles)
+    shuffle(sweetFiles)
+    # taking only the minimum amount of pictures per label forward to the training and valid sets to balance the dataset and not overfit to the most common label!
+    skyFiles = skyFiles[0:minPictures:]
+    ubuntuFiles = ubuntuFiles[0:minPictures:]
+    sweetFiles = sweetFiles[0:minPictures:]
+    # print(len(ubuntuFiles),len(skyFiles),len(sweetFiles)) #sanity check to see we got only the min amout of pictures per label
+    train_num = int(np.floor(minPictures * splitRatio))
+    valid_num = int(np.floor(minPictures * (1 - splitRatio)))
+    # print(train_num,valid_num) #1544 385
+    i = 0
+    for i in range(minPictures):
+        if i < train_num:
+            os.rename(os.path.join(paths[0], skyFiles[i]), f'training_data\SkyLark\\{skyFiles[i]}')
+            os.rename(os.path.join(paths[1], ubuntuFiles[i]), f'training_data\\UbuntuMono\\{ubuntuFiles[i]}')
+            os.rename(os.path.join(paths[2], sweetFiles[i]), f'training_data\SweetPuppy\\{sweetFiles[i]}')
+        else:
+            os.rename(os.path.join(paths[0], skyFiles[i]), f'validation_data\SkyLark\\{skyFiles[i]}')
+            os.rename(os.path.join(paths[1], ubuntuFiles[i]), f'validation_data\\UbuntuMono\\{ubuntuFiles[i]}')
+            os.rename(os.path.join(paths[2], sweetFiles[i]), f'validation_data\SweetPuppy\\{sweetFiles[i]}')
+
+
 
     ###############################
 
@@ -141,60 +186,6 @@ def preprocess():
     plt.plot(x, y, 'k')
     plt.show()
     '''
-def second(SkyCounter, UbuntuCounter, SweetCounter):
-    paths=['font_recognition_train_set\images\Skylark','font_recognition_train_set\images\\Ubuntu','font_recognition_train_set\images\Sweet']#delete when moved up
-    folderNames=['SkyLark','UbuntuMono','SweetPuppy']
-    splitRatio=0.8
-
-    plt.figure()
-    plt.bar([f'SkyCounter {SkyCounter}',f'UbuntuCounter {UbuntuCounter}',f'SweetCounter {SweetCounter}'],[SkyCounter,UbuntuCounter,SweetCounter],color=['red','green','blue'])
-    plt.title('Pictures per Label', fontsize=20)
-    plt.xlabel('Labels', fontsize=20)
-    plt.show()
-    minPictures = min(SkyCounter, UbuntuCounter, SweetCounter)
-    print(f'the minimum amount of pics from each category is {minPictures}')
-
-
-    ### building folders for Training and validation sets
-    path='training_data'
-    if not os.path.isdir(path):
-        print(f'created a new directory {path}')
-        os.mkdir(path)
-        for i,_ in enumerate(paths):
-            os.mkdir(os.path.join(path,folderNames[i]))
-
-    path = 'validation_data'
-    if not os.path.isdir(path):
-        print(f'created a new directory {path}')
-        os.mkdir(path)
-        for i,_ in enumerate(paths):
-            os.mkdir(os.path.join(path,folderNames[i]))
-
-    #creating a list of files for each label and shuffling them to reduce correlation between samples
-    skyFiles=os.listdir(paths[0])
-    ubuntuFiles=os.listdir(paths[1])
-    sweetFiles=os.listdir(paths[2])
-    shuffle(skyFiles)
-    shuffle(ubuntuFiles)
-    shuffle(sweetFiles)
-    # taking only the minimum amount of pictures per label forward to the training and valid sets to balance the dataset and not overfit to the most common label!
-    skyFiles=skyFiles[0:minPictures:]
-    ubuntuFiles=ubuntuFiles[0:minPictures:]
-    sweetFiles=sweetFiles[0:minPictures:]
-    #print(len(ubuntuFiles),len(skyFiles),len(sweetFiles)) #sanity check to see we got only the min amout of pictures per label
-    train_num=int(np.floor(minPictures*splitRatio))
-    valid_num=int(np.floor(minPictures*(1-splitRatio)))
-    #print(train_num,valid_num) #1544 385
-    i=0
-    for i in range (minPictures):
-        if i< train_num:
-            os.rename(os.path.join(paths[0],skyFiles[i]),f'training_data\SkyLark\\{skyFiles[i]}')
-            os.rename(os.path.join(paths[1],ubuntuFiles[i]),f'training_data\\UbuntuMono\\{ubuntuFiles[i]}')
-            os.rename(os.path.join(paths[2],sweetFiles[i]),f'training_data\SweetPuppy\\{sweetFiles[i]}')
-        else:
-            os.rename(os.path.join(paths[0], skyFiles[i]), f'validation_data\SkyLark\\{skyFiles[i]}')
-            os.rename(os.path.join(paths[1], ubuntuFiles[i]), f'validation_data\\UbuntuMono\\{ubuntuFiles[i]}')
-            os.rename(os.path.join(paths[2], sweetFiles[i]), f'validation_data\SweetPuppy\\{sweetFiles[i]}')
 
 
 
@@ -205,8 +196,8 @@ def train_model():
         label_mode="categorical",
         class_names=None,
         color_mode="grayscale",
-        batch_size=16,
-        image_size=(256, 256),
+        batch_size=32,
+        image_size=(128, 128),
         shuffle=True,
         seed=1,
         validation_split=None,
@@ -220,8 +211,8 @@ def train_model():
         label_mode="categorical",
         class_names=None,
         color_mode="grayscale",
-        batch_size=16,
-        image_size=(256, 256),
+        batch_size=32,
+        image_size=(128, 128),
         shuffle=True,
         seed=1,
         validation_split=None,
@@ -248,8 +239,8 @@ def train_model():
     data_augmentation = tf.keras.models.Sequential(
         [
             tf.keras.layers.experimental.preprocessing.RandomFlip("horizontal",
-                                                                  input_shape=(256,
-                                                                               256,
+                                                                  input_shape=(128,
+                                                                               128,
                                                                                1)),
             tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
             tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
@@ -258,14 +249,12 @@ def train_model():
     )
 
     model = tf.keras.models.Sequential([
-        # This is the first convolution
         data_augmentation,
-        tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(256, 256, 1)),
+        tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=(128, 128, 1)),
         tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Conv2D(128, (3, 3), activation='relu'),
         tf.keras.layers.Dropout(0.25),
-
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Conv2D(256, (3, 3), activation='relu'),
         tf.keras.layers.Dropout(0.25),
@@ -274,13 +263,11 @@ def train_model():
         tf.keras.layers.MaxPooling2D(2, 2),
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dropout(0.25),
-        # 512 neuron hidden layer
-        tf.keras.layers.Dense(256, activation='relu'),
         tf.keras.layers.Dense(512, activation='relu'),
+        tf.keras.layers.Dense(1024, activation='relu'),
         tf.keras.layers.Dense(3, activation='softmax')
     ])
 
-    adam = tf.keras.optimizers.Adam(lr=0.01, decay=1e-6)
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         initial_learning_rate=1e-2,
         decay_steps=10000,
@@ -293,7 +280,7 @@ def train_model():
     )
 
     epochs = 100
-    filepath = "CNNbest.hdf5"
+    filepath = "../CNNbest.hdf5"
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True,
                                                     mode='max')
     callbacks_list = [checkpoint]
@@ -331,7 +318,7 @@ def load_model(bestModelPath):
 def predict_one_image(path):
     image = path
     img = tf.keras.preprocessing.image.load_img(
-        image, target_size=(256, 256), color_mode='grayscale')
+        image, target_size=(128, 128), color_mode='grayscale')
 
     plt.imshow(img)
     plt.show()
@@ -361,7 +348,7 @@ def predict_9_random_picture_from_each_class():
         for i in range(0, 9):
             plt.subplot(331 + i)
             img = tf.keras.preprocessing.image.load_img(
-                pics[random.randint(0, 385)], target_size=(256, 256), color_mode='grayscale')
+                pics[random.randint(0, 385)], target_size=(128, 128), color_mode='grayscale')
             img_array = tf.keras.preprocessing.image.img_to_array(img)
             img_array = tf.expand_dims(img_array, 0)
             pred = best_model.predict_classes(img_array)
@@ -374,14 +361,11 @@ def predict_9_random_picture_from_each_class():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    #SkyCounter, UbuntuCounter, SweetCounter=preprocess()
-    #SkyCounter, UbuntuCounter, SweetCounter=1930,2974,7334
-    #second(SkyCounter, UbuntuCounter, SweetCounter)
+    #preprocess()
     train_model()
-    #bestModelPath = 'CNN90.7val.hdf5'
     bestModelPath = 'CNNbest.hdf5'
     best_model=load_model(bestModelPath)
-    predict_9_random_picture_from_each_class()
+    #predict_9_random_picture_from_each_class()
 
 
     ###########################

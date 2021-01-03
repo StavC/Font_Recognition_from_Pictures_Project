@@ -28,7 +28,7 @@ import random
 def preprocess():
 
 
-    file_name = 'font_recognition_train_set/SynthText.h5'
+    file_name = '../font_recognition_train_set/SynthText.h5'
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
 
@@ -117,14 +117,14 @@ def preprocess():
     print(f'the minimum amount of pics from each category is {minPictures}')
 
     ### building folders for Training and validation sets
-    path = 'training_data'
+    path = '../training_data'
     if not os.path.isdir(path):
         print(f'created a new directory {path}')
         os.mkdir(path)
         for i, _ in enumerate(paths):
             os.mkdir(os.path.join(path, folderNames[i]))
 
-    path = 'validation_data'
+    path = '../validation_data'
     if not os.path.isdir(path):
         print(f'created a new directory {path}')
         os.mkdir(path)
@@ -418,15 +418,15 @@ def outputWronglyPredictedLabels(wrongCounterChars,wrongChars):
     plt.show()
 
 def test_predict(best_model):
-    if not os.path.isdir('test_data'):
-        os.mkdir('test_data')
+    if not os.path.isdir('../test_data'):
+        os.mkdir('../test_data')
         print("created a new directory test_data, please put the file 'SynthTextTest.h5' there.")
-    if not os.listdir('test_data'):
+    if not os.listdir('../test_data'):
         print('the folder is empty ,please fill it according to the manual, breaking now')
         return 'error'
 
     best_model=best_model
-    file_name = 'test_data/SynthTextTest.h5'
+    file_name = '../test_data/SynthTextTest.h5'
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
     plt.figure()

@@ -58,9 +58,9 @@ def preprocess():
         for char in font: #going through all the pictures
 
             pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
-            pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
+            pts2 = np.float32([[0, 0], [128, 0], [0, 128], [128, 128]])
             M = cv2.getPerspectiveTransform(pts1, pts2)
-            dst = cv.warpPerspective(img, M, (400, 400)) # cropping out a 400,400 pic of the char
+            dst = cv.warpPerspective(img, M, (128, 128)) # cropping out a 400,400 pic of the char
             #plt.imshow(dst) #showing the croped pic
             #plt.show()
             #print(f' real {font[i]}') #priting out the real label of the font used for checkingout the code
@@ -147,9 +147,6 @@ def preprocess():
 
     ###############################
 
-
-
-
 def train_model():
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
         'training_data',
@@ -203,9 +200,9 @@ def train_model():
                                                                   input_shape=(128,
                                                                                128,
                                                                                1)),
-            tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
-            tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
-            tf.keras.layers.experimental.preprocessing.RandomZoom(0.1),
+            #tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
+            tf.keras.layers.experimental.preprocessing.RandomContrast(0.3),
+            tf.keras.layers.experimental.preprocessing.RandomZoom(0.4),
         ]
     )
 
@@ -275,22 +272,6 @@ def load_model(bestModelPath):
     model = tf.keras.models.load_model(bestModelPath)
     model.summary()
     return model
-
-def predict_one_image(path):
-    image = path
-    img = tf.keras.preprocessing.image.load_img(
-        image, target_size=(128, 128), color_mode='grayscale')
-
-    plt.imshow(img)
-    plt.show()
-
-    img_array = tf.keras.preprocessing.image.img_to_array(img)
-    img_array = tf.expand_dims(img_array, 0)  # Create a batc
-    pred = best_model.predict_classes(img_array)
-    class_names = ["Skylark", 'Sweet Puppy','Ubuntu Mono']
-
-    print(f'the predicted label is: {class_names[int(pred)]}')
-    print(f' the model is sure about it in :{best_model.predict(img_array)[0][pred]}')
 
 def predict_9_random_picture_from_each_class():
     class_names = ["Skylark", 'Sweet Puppy','Ubuntu Mono']
@@ -422,9 +403,9 @@ def test_predict(best_model):
                 for char in words:  # going through all the pictures
 
                     pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
-                    pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
+                    pts2 = np.float32([[0, 0], [128, 0], [0, 128], [128, 128]])
                     M = cv2.getPerspectiveTransform(pts1, pts2)
-                    dst = cv.warpPerspective(img, M, (400, 400))  # cropping out a 400,400 pic of the char
+                    dst = cv.warpPerspective(img, M, (128, 128))  # cropping out a 400,400 pic of the char
                     dst=cv.cvtColor(dst,cv.COLOR_BGR2GRAY)
                     dst=cv.resize(dst,(128,128))
                     pics.append(dst)
@@ -501,8 +482,8 @@ def test_predict(best_model):
 if __name__ == '__main__':
 
     #preprocess()
-    #train_model()
-    bestModelPath = 'CNN91.4val128.hdf5' #'NewModel.hdf5'
+    train_model()
+    bestModelPath = 'NewModel.hdf5' #'CNN91.4val.hdf5'
     best_model=load_model(bestModelPath)
     #predict_9_random_picture_from_each_class()
     test_predict(best_model)

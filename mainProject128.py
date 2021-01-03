@@ -33,22 +33,9 @@ def preprocess():
     im_names = list(db['data'].keys())
 
 
-    '''
-    im = im_names[0]
-    img = db['data'][im][:]
-    font = db['data'][im].attrs['font']
-    txt = db['data'][im].attrs['txt']
-    charBB = db['data'][im].attrs['charBB']
-    wordBB = db['data'][im].attrs['wordBB']
-    #print(img)
-    #print(font)
-    #print(f'char Bouding Box {charBB}')
-    #print(wordBB)
-    '''
-
     ###############################
     font_name = ["b'Skylark'", "b'Ubuntu Mono'", "b'Sweet Puppy'"]
-    paths=['font_recognition_train_set\images\Skylark','font_recognition_train_set\images\\Ubuntu','font_recognition_train_set\images\Sweet']
+    paths=['font_recognition_train_set\Skylark','font_recognition_train_set\\Ubuntu','font_recognition_train_set\Sweet']
 
     for path in paths:
         if not os.path.isdir(path):
@@ -65,8 +52,7 @@ def preprocess():
         txt = db['data'][im_name].attrs['txt']
         font = db['data'][im_name].attrs['font']
 
-        #print(f'the text : {txt}')
-        #print(font)
+
 
         i=0
         for char in font: #going through all the pictures
@@ -161,32 +147,6 @@ def preprocess():
 
     ###############################
 
-    '''
-    showing the pictures with bouding boxes
-    font_name = ['Skylark', 'Ubuntu Mono', 'Sweet Puppy']
-    nC = charBB.shape[-1]
-    plt.figure()
-    plt.imshow(img)
-    for b_inx in range(nC):
-        if font[b_inx].decode('UTF-8') == font_name[0]:
-            color = 'r'
-        elif font[b_inx].decode('UTF-8') == font_name[1]:
-            color = 'b'
-        else:
-            color = 'g'
-        bb = charBB[:, :, b_inx]
-        x = np.append(bb[0, :], bb[0, 0])
-        y = np.append(bb[1, :], bb[1, 0])
-        plt.plot(x, y, color)
-        # plot the word's BB:
-    nW = wordBB.shape[-1]
-    for b_inx in range(nW):
-        bb = wordBB[:, :, b_inx]
-        x = np.append(bb[0, :], bb[0, 0])
-        y = np.append(bb[1, :], bb[1, 0])
-    plt.plot(x, y, 'k')
-    plt.show()
-    '''
 
 
 
@@ -243,9 +203,9 @@ def train_model():
                                                                   input_shape=(128,
                                                                                128,
                                                                                1)),
-            #tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
+            tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
             tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
-            tf.keras.layers.experimental.preprocessing.RandomZoom(0.2),
+            tf.keras.layers.experimental.preprocessing.RandomZoom(0.1),
         ]
     )
 
@@ -281,7 +241,7 @@ def train_model():
     )
 
     epochs = 100
-    filepath = "CNNbest.hdf5"
+    filepath = "NewModel.hdf5"
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True,
                                                     mode='max')
     callbacks_list = [checkpoint]
@@ -541,8 +501,8 @@ def test_predict(best_model):
 if __name__ == '__main__':
 
     #preprocess()
-    train_model()
-    bestModelPath = 'CNNBest.hdf5'  #'CNN91.4val128.hdf5'
+    #train_model()
+    bestModelPath = 'CNN91.4val128.hdf5' #'NewModel.hdf5'
     best_model=load_model(bestModelPath)
     #predict_9_random_picture_from_each_class()
     test_predict(best_model)

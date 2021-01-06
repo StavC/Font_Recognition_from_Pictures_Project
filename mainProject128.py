@@ -58,9 +58,9 @@ def preprocess():
         for char in font: #going through all the pictures
 
             pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
-            pts2 = np.float32([[0, 0], [128, 0], [0, 128], [128, 128]])
+            pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
             M = cv2.getPerspectiveTransform(pts1, pts2)
-            dst = cv.warpPerspective(img, M, (128, 128)) # cropping out a 400,400 pic of the char
+            dst = cv.warpPerspective(img, M, (400, 400)) # cropping out a 400,400 pic of the char
             #plt.imshow(dst) #showing the croped pic
             #plt.show()
             #print(f' real {font[i]}') #priting out the real label of the font used for checkingout the code
@@ -200,9 +200,9 @@ def train_model():
                                                                   input_shape=(128,
                                                                                128,
                                                                                1)),
-            #tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
-            tf.keras.layers.experimental.preprocessing.RandomContrast(0.3),
-            tf.keras.layers.experimental.preprocessing.RandomZoom(0.4),
+            tf.keras.layers.experimental.preprocessing.RandomRotation(0.1),
+            tf.keras.layers.experimental.preprocessing.RandomContrast(0.1),
+            tf.keras.layers.experimental.preprocessing.RandomZoom(0.1),
         ]
     )
 
@@ -324,7 +324,7 @@ def outputOccurrencePlot(wrongWords,rightWords):
     print(dfWrong.head())
     fig = plt.figure(figsize=(15, 5))
     ax = sns.barplot(x="length", y="count", data=dfWrong)
-    plt.suptitle('wrong predicted wrongs length')
+    plt.suptitle('wrong predicted words length')
     plt.show()
 
     rightOccurrence = dict()
@@ -342,7 +342,7 @@ def outputOccurrencePlot(wrongWords,rightWords):
 
     fig = plt.figure(figsize=(15, 5))
     ax = sns.barplot(x="length", y="count", data=dfRight)
-    plt.suptitle('right predicted wrongs length')
+    plt.suptitle('right predicted words length')
     plt.show()
 def outputWronglyPredictedLabels(wrongCounterChars,wrongChars):
     plt.figure(figsize=(25, 10))
@@ -365,7 +365,7 @@ def test_predict(best_model):
         return 'error'
 
     best_model=best_model
-    file_name = 'test_data/SynthText_val.h5'
+    file_name = 'test_data/SynthText_val.h5' # Path to the test set
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
     plt.figure()
@@ -403,9 +403,9 @@ def test_predict(best_model):
                 for char in words:  # going through all the pictures
 
                     pts1 = np.float32([charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
-                    pts2 = np.float32([[0, 0], [128, 0], [0, 128], [128, 128]])
+                    pts2 = np.float32([[0, 0], [400, 0], [0, 400], [400, 400]])
                     M = cv2.getPerspectiveTransform(pts1, pts2)
-                    dst = cv.warpPerspective(img, M, (128, 128))  # cropping out a 400,400 pic of the char
+                    dst = cv.warpPerspective(img, M, (400, 400))  # cropping out a 400,400 pic of the char
                     dst=cv.cvtColor(dst,cv.COLOR_BGR2GRAY)
                     dst=cv.resize(dst,(128,128))
                     pics.append(dst)
@@ -482,8 +482,8 @@ def test_predict(best_model):
 if __name__ == '__main__':
 
     #preprocess()
-    train_model()
-    bestModelPath = 'NewModel.hdf5' #'CNN91.4val.hdf5'
+    #train_model()
+    bestModelPath = 'CNN91.4val.hdf5'
     best_model=load_model(bestModelPath)
     #predict_9_random_picture_from_each_class()
     test_predict(best_model)

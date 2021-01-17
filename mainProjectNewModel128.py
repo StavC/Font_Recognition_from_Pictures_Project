@@ -27,7 +27,8 @@ import random
 
 
 def preprocess():
-    file_name = 'font_recognition_train_set/SynthText.h5'  # loading the train-set!!! make sure the file is in the right direction!
+    #file_name = 'font_recognition_train_set/SynthText.h5'  # loading the train-set!!! make sure the file is in the right direction!
+    file_name = 'font_recognition_train_set/train.h5'  # loading the train-set!!! make sure the file is in the right direction!
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
 
@@ -348,7 +349,7 @@ def test_predict(best_model): #testing the full model with the voting scheme
         return 'error'
 
     best_model = best_model
-    file_name = 'test_data/SynthTextTest.h5'  # Path to the test set
+    file_name = 'test_data/SynthText_val.h5'  # Path to the test set
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
     plt.figure()
@@ -457,12 +458,98 @@ def test_predict(best_model): #testing the full model with the voting scheme
         cv2.imwrite(os.path.join('WrongPredictedLetters', f'{i}.jpg'), wrongChars[i][0])
 
 
+
+def predict_final_test_set(best_model): #testing the full model with the voting scheme
+    if not os.path.isdir('test_data'):
+        os.mkdir('test_data')
+        print("created a new directory test_data, please put the file 'test.h5' there.")
+    if not os.listdir('test_data'):
+        print('the folder is empty ,please fill it according to the manual, breaking now')
+        return 'error'
+
+    best_model = best_model
+    file_name = 'test_data/test.h5'  # Path to the test set
+    db = h5py.File(file_name, 'r')
+    im_names = list(db['data'].keys())
+    plt.figure()
+    class_names = ["Skylark", 'Sweet Puppy', 'Ubuntu Mono']
+    char_pred = []
+    SkylarkCounter = 0
+    SweetCounter = 0
+    UbuntuCounter = 0
+
+
+    print(len(im_names))
+    with open('char_font_final_test_set_predictions.csv', mode='w', newline='') as predictionCsv:
+        csvWriter = csv.writer(predictionCsv)
+        csvWriter.writerow(
+            [' ', 'image', 'char', "b'Skylark'", "b'Sweet Puppy'", "b'Ubuntu Mono'"])
+        k = 0
+        for im_name in im_names:
+            img = db['data'][im_name][:]
+            charBB = db['data'][im_name].attrs['charBB']
+            txt = db['data'][im_name].attrs['txt']
+            #font = db['data'][im_name].attrs['font']
+
+            i = 0
+            for words in txt:  # taking every word in the txt and parsing chars
+                pics = []  # pictures of the char from the word
+                for char in words:  # going through all the pictures
+
+                    pts1 = np.float32(
+                        [charBB[:, :, i].T[0], charBB[:, :, i].T[1], charBB[:, :, i].T[3], charBB[:, :, i].T[2]])
+                    pts2 = np.float32([[0, 0], [128, 0], [0, 128], [128, 128]])
+                    M = cv2.getPerspectiveTransform(pts1, pts2)
+                    dst = cv.warpPerspective(img, M, (128, 128))  # cropping out a 128,128 pic of the char
+                    dst = cv.cvtColor(dst, cv.COLOR_BGR2GRAY)
+                    dst = cv.resize(dst, (128, 128))
+                    pics.append(dst)
+                    # plt.imshow(dst,cmap='gray')  # showing the croped pic
+                    # plt.show()
+                    i += 1
+                fontProb = [0, 0, 0]  # Skylark", 'Sweet Puppy','Ubuntu Mono
+                for j in range(len(pics)):
+                    img_array = tf.keras.preprocessing.image.img_to_array(pics[j])
+                    img_array = tf.expand_dims(img_array, 0)
+                    predLabel = np.argmax(best_model.predict(img_array), axis=-1)
+                    fontProb += best_model.predict(img_array)[0]  # each char cast a vote
+
+                predictedFont = class_names[np.argmax(fontProb)]  # declaring the winner of the elections!
+                # print(f' the predicted font for the word {words} is {predictedFont} and the real label is {font[i-1]}')
+
+
+                for _ in range(len(pics)):  # looping and inserting every char of the word
+
+                    char_pred.append(predictedFont)
+                    Skylark = 0
+                    Sweet = 0
+                    Ubuntu = 0
+                    if predictedFont == 'Skylark':
+                        Skylark = 1
+                        SkylarkCounter+=1
+                    elif predictedFont == 'Sweet Puppy':
+                        Sweet = 1
+                        SweetCounter+=1
+                    else:
+                        Ubuntu = 1
+                        UbuntuCounter+=1
+                    csvWriter.writerow([k, im_name, chr(words[_]), Skylark, Sweet, Ubuntu])
+                    k += 1
+    print(f'the model predicted {SkylarkCounter} SkyLark chars, {SweetCounter} SweetPuppy chars, {UbuntuCounter} Ubuntu Mono chars')
+                #word_pred.append(predictedFont)
+
+
+    ########## End of Model ##########
+
+
+
 if __name__ == '__main__':
-    # preprocess()
-    # train_model()
-    bestModelPath = 'NewModel98.2.hdf5'  # 'CNN91.4val.hdf5'
+    preprocess()
+    train_model()
+    bestModelPath = 'NewModel.hdf5' #'NewModel98.2.hdf5'  # 'CNN91.4val.hdf5'
     best_model = load_model(bestModelPath)
     # predict_9_random_picture_from_each_class()
     test_predict(best_model)
+    #predict_final_test_set(best_model)
 
     ###########################

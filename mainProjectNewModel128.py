@@ -27,8 +27,8 @@ import random
 
 
 def preprocess():
-    #file_name = 'font_recognition_train_set/SynthText.h5'  # loading the train-set!!! make sure the file is in the right direction!
-    file_name = 'font_recognition_train_set/train.h5'  # loading the train-set!!! make sure the file is in the right direction!
+    file_name = 'font_recognition_train_set/SynthText.h5'  # loading the train-set!!! make sure the file is in the right direction!
+    #file_name = 'font_recognition_train_set/train.h5'  # loading the train-set!!! make sure the file is in the right direction!
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
 
@@ -536,7 +536,6 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
                     csvWriter.writerow([k, im_name, chr(words[_]), Skylark, Sweet, Ubuntu])
                     k += 1
     print(f'the model predicted {SkylarkCounter} SkyLark chars, {SweetCounter} SweetPuppy chars, {UbuntuCounter} Ubuntu Mono chars')
-                #word_pred.append(predictedFont)
 
 
     ########## End of Model ##########
@@ -545,11 +544,11 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
 
 if __name__ == '__main__':
     preprocess()
-    train_model()
-    bestModelPath = 'NewModel.hdf5' #'NewModel98.2.hdf5'  # 'CNN91.4val.hdf5'
+    #train_model()
+    bestModelPath ='NewModel98.2.hdf5'  # 'CNN91.4val.hdf5'
     best_model = load_model(bestModelPath)
     # predict_9_random_picture_from_each_class()
-    test_predict(best_model)
-    #predict_final_test_set(best_model)
+    #test_predict(best_model)
+    #predict_final_test_set(best_model) #predicting test data without labels
 
     ###########################

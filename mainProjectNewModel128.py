@@ -28,7 +28,6 @@ import random
 
 def preprocess():
     file_name = 'font_recognition_train_set/SynthText.h5'  # loading the train-set!!! make sure the file is in the right direction!
-    #file_name = 'font_recognition_train_set/train.h5'  # loading the train-set!!! make sure the file is in the right direction!
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
 
@@ -468,7 +467,7 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
         return 'error'
 
     best_model = best_model
-    file_name = 'test_data/test.h5'  # Path to the test set
+    file_name = 'test_data/test.h5'  # Path to the test set make sure the file is in the right location!
     db = h5py.File(file_name, 'r')
     im_names = list(db['data'].keys())
     plt.figure()
@@ -479,7 +478,7 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
     UbuntuCounter = 0
 
 
-    print(len(im_names))
+    print(f' there are :{len(im_names)} in the dataset, hold on till the prediction will be over')
     with open('char_font_final_test_set_predictions.csv', mode='w', newline='') as predictionCsv:
         csvWriter = csv.writer(predictionCsv)
         csvWriter.writerow(
@@ -489,7 +488,6 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
             img = db['data'][im_name][:]
             charBB = db['data'][im_name].attrs['charBB']
             txt = db['data'][im_name].attrs['txt']
-            #font = db['data'][im_name].attrs['font']
 
             i = 0
             for words in txt:  # taking every word in the txt and parsing chars
@@ -515,7 +513,6 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
                     fontProb += best_model.predict(img_array)[0]  # each char cast a vote
 
                 predictedFont = class_names[np.argmax(fontProb)]  # declaring the winner of the elections!
-                # print(f' the predicted font for the word {words} is {predictedFont} and the real label is {font[i-1]}')
 
 
                 for _ in range(len(pics)):  # looping and inserting every char of the word
@@ -544,11 +541,11 @@ def predict_final_test_set(best_model): #testing the full model with the voting 
 
 if __name__ == '__main__':
     preprocess()
-    #train_model()
-    bestModelPath ='NewModel98.2.hdf5'  # 'CNN91.4val.hdf5'
+    train_model()
+    bestModelPath ='NewModel98.2.hdf5'  #using model 2
     best_model = load_model(bestModelPath)
-    # predict_9_random_picture_from_each_class()
-    #test_predict(best_model)
-    #predict_final_test_set(best_model) #predicting test data without labels
+    predict_9_random_picture_from_each_class()
+    test_predict(best_model) #predicting data set with labels
+    predict_final_test_set(best_model) #predicting test data without labels
 
     ###########################

@@ -2,7 +2,9 @@
 In this CV project I created a "voting" algorithem that classify the font of a text that embedded in a given picture.
 
 
-
+Read the project report or the powerpoints slide to get a better understanding on the project and how to redeploy it.
+https://github.com/StavC/Font_Recognition_from_Pictures_Project/blob/master/ProjectResearchReport-ReadMe.docx
+https://github.com/StavC/Font_Recognition_from_Pictures_Project/blob/master/Project%20PowerPoint%20lecture.pptx
 
 
 
